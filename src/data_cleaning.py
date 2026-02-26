@@ -10,7 +10,7 @@ def day_or_night(start_time):
     else:
       return 'Night'
 
-df = pd.read_csv('/workspaces/DIC-Project_1/data/raw/placeholder_raw.txt')
+df = pd.read_csv('../data/raw/US_Accidents_March23.csv')
 
 df['Start_Time'] = pd.to_datetime(df['Start_Time'], format='mixed')
 df['End_Time'] = pd.to_datetime(df['End_Time'], format='mixed')
@@ -104,3 +104,6 @@ df_no_outliers = df[
     (df['Temperature(F)'] >= lower_bound_temperature) & (df['Temperature(F)'] <= upper_bound_temperature)
 ].copy()
 df = df_no_outliers
+
+#final cleaned dataset saved as csv
+df.to_csv('../data/processed/data_processed.csv')
