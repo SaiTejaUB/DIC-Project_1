@@ -38,4 +38,48 @@ plt.show()
 # the the distibution of the 30f and the 100f which mean most accidents take place in this distibution and the peak is between the 60 and the 90f most values are between the 0f and the 100f and below the 0f we can say that that temp is outliner or that weather conditon is rare
 df["Temperature(F)"].describe()
 #the mean temp of the thing 61 percentage  and 64 is the median where as the min is -89 which i feel is impossible and it is very extream this may an outline or error same with the extream temp so duning cleaning we have to remove them as it is too extream for temperature
-
+df_samples.boxplot(column="Visibility(mi)",by="Severity")
+plt.title("Visibility by the Severity")
+plt.suptitle("")
+plt.xlabel("Severity")
+plt.ylabel("Visibility")
+plt.show()
+# the severity the visibilty is around the 10 which show that the visibilty is not influncing the severity even though some times low visibilty can cause accidents but i think the report may have errors or the it is true
+df["Start_Time"] = pd.to_datetime(df["Start_Time"], errors="coerce")
+df["Hours"] = df["Start_Time"].dt.hour
+counts = df["Hours"].value_counts().sort_index()
+counts.plot(kind="line")
+plt.title("Accidents by the Hour")
+plt.xlabel("Hour of the Day")
+plt.ylabel("Number of the Accidents")
+plt.show()
+month_counting = df["Month"].value_counts().sort_index()
+month_counting.plot(kind="line")
+plt.title("Accidents by the  Months")
+plt.xlabel("Months")
+plt.ylabel("Number of the Accidents")
+plt.show()
+#this plot is showing an important patten accidents are less in the mid months but increase in the end months of the year this many be due to the winter or holiadys or the more travel in foggy weather this also show that the seasons or patten of weather in a year influnce the accident number
+state_counts = df["State"].value_counts().head(10)
+state_counts.plot(kind="bar")
+plt.title("Top 10 States by the number of Accidents")
+plt.xlabel("State")
+plt.ylabel("Number of the Accidents")
+plt.show()
+# the CA have the highest number of the accidents compared to other states it may be due to the bigger size of the ca state or more vechiles. so size and number of vechiles influnce the accidents number
+import seaborn as sns
+cols = [
+    "Temperature(F)",
+    "Humidity(%)",
+    "Pressure(in)",
+    "Visibility(mi)",
+    "Wind_Speed(mph)",
+    "Precipitation(in)",
+    "Distance(mi)"
+]
+corr = df[cols].corr()
+plt.figure(figsize=(9,7))
+sns.heatmap(corr, annot=True)
+plt.title("Correlation Heatmap")
+plt.show()
+#the correlation heatmap shows that most have week lieanr relationship we can also see high negitive correlation between the Humidity and temperature this shows that when humidity increases the visibility decreases this reflect the real life scenario
