@@ -74,16 +74,18 @@ Weather variables show mostly weak correlations.
 
 ## How to Run (Step-by-Step)
 
-1. Manually unzip the data file.  
+1. Manually unzip the data file. 
+   The dataset has already been provided, so `data_collection.py` is not required
    (data_collection.py will only work with Kaggle API)
 
 2. Save the dataset in the data/raw folder.  
    Example:  
-   data/raw/US_Accidents_March23.csv  
+   `data/raw/US_Accidents_March23.csv ` 
 
 3. Run EDA with the correct path to the dataset:  
-   python eda.py  
+   `python eda.py ` 
 
 4. Run data cleaning with the correct path to the dataset:  
-   python data_cleaning.py  
+   `python data_cleaning.py  `
+
 
