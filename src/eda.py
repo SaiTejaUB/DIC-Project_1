@@ -1,73 +1,147 @@
+# -*- coding: utf-8 -*-
+# Exploratory analysis of the US Accidents dataset
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-PATH = "/content/drive/MyDrive/US_Accidents_March23.csv"
+
+PATH = r"C:\My_Stuff\UNIVERSITY AT BUFFALO\Courses\SEMESTER 2\DIC\New_Term_Project\DIC-Project_1\data\raw\US_Accidents_March23.csv"
+
+# Preview a subset of the data to get a quick sense of structure and types
+df_preview = pd.read_csv(PATH, nrows=100000, low_memory=False)
+
+# Select a subset of columns that are relevant for initial analysis
 selected_colums = [
-    "Severity","Start_Time",
-    "State", "City","County",
+    "Severity", "Start_Time",
+    "State", "City", "County",
     "Weather_Condition", "Sunrise_Sunset",
     "Temperature(F)", "Humidity(%)", "Pressure(in)",
-    "Visibility(mi)","Wind_Speed(mph)","Precipitation(in)",
+    "Visibility(mi)", "Wind_Speed(mph)", "Precipitation(in)",
     "Distance(mi)"
 ]
+
 df = pd.read_csv(PATH, usecols=selected_colums, low_memory=False)
-print("Shape of the dataset",df.shape)
+print("Shape of the dataset", df.shape)
 df.head()
+
+# Check distribution of severity levels to understand class balance
 severity_counting = df["Severity"].value_counts()
 print(severity_counting)
-# the distibution of the Severity is highly imbalanced it is dominated by the severity 2 with almost 80 percent of the distibution having severity 2 the other severity 1,3,4 are only small proportion of the data. modeling will also get influnce the data imbalance may get biased towards the single class
-missing=df.isnull().sum()
-missing_percentage=(missing/len(df))*100
-missing_df=missing_df.sort_values("Missing percentage",ascending=False)
+
+# The severity distribution is highly imbalanced.
+# Severity 2 dominates (around 80% of the data), while 1, 3, and 4 are much smaller.
+# Any modeling will need to account for this imbalance or it may bias towards the majority class.
+
+# Calculate missing values and missing percentages per column
+missing = df.isnull().sum()
+missing_percentage = (missing / len(df)) * 100
+
+missing_df = pd.DataFrame({
+    "count of missing": missing,
+    "Missing percentage": missing_percentage
+})
+
+missing_df = missing_df.sort_values("Missing percentage", ascending=False)
 missing_df
-# the values show that 28.5 percentage of the Precipitation so we can say it is a incomplete variable in the dataset and the other colums wind_speed had 7.39 percentage of the missing values while the other colums have only 2 percentage missing. while the other variables whicvha re core like city etc are not
-df_samples= df.sample(n=900000,random_state=45)
+
+# Precipitation has about 28.5% missing values and is effectively incomplete.
+# Wind_Speed has around 7.39% missing, while most other columns are near 2%.
+# Core variables like City and State have relatively low missingness, which is useful.
+
+# Sample a subset to speed up plotting and EDA
+df_samples = df.sample(n=900000, random_state=45)
+
+# Distribution of visibility
 plt.hist(df_samples["Visibility(mi)"].dropna())
 plt.title("Distribution of the visibility")
-plt.xlabel("number of Visibile miles")
+plt.xlabel("Number of visible miles")
 plt.ylabel("Frequency")
 plt.show()
-# the distibution of the visibility is concentrated between the 5 and 20 which means the most accidents took place in this range with some values streaching into above 20 miles which means that accidents doesent take place only in the low visibilty but can also take place in high visibility
+
+# Visibility is concentrated roughly between 5 and 20 miles.
+# Most accidents happen in this range, but there are also accidents at higher visibility,
+# which suggests accidents are not limited to low-visibility conditions.
+
 df["Visibility(mi)"].describe()
-#i found that the visibility of the most accidents 25% and 50 percentage and 75 percentage  is in the 10 miles range it can be maximum reported value be 10 miles
+
+# The 25th, 50th, and 75th percentiles of visibility are around 10 miles.
+# The maximum reported visibility looks high and needs to be checked during cleaning.
+
+# Distribution of temperature
 plt.hist(df_samples["Temperature(F)"].dropna())
 plt.title("Distribution of the temperature")
-plt.xlabel("Temperature")
+plt.xlabel("Temperature (F)")
 plt.ylabel("Frequency")
 plt.show()
-# the the distibution of the 30f and the 100f which mean most accidents take place in this distibution and the peak is between the 60 and the 90f most values are between the 0f and the 100f and below the 0f we can say that that temp is outliner or that weather conditon is rare
+
+# Most temperatures fall between about 30F and 100F, with a peak around 60–90F.
+# Values below 0F or extreme highs may be outliers or rare weather conditions
+# and should be checked in the cleaning step.
+
 df["Temperature(F)"].describe()
-#the mean temp of the thing 61 percentage  and 64 is the median where as the min is -89 which i feel is impossible and it is very extream this may an outline or error same with the extream temp so duning cleaning we have to remove them as it is too extream for temperature
-df_samples.boxplot(column="Visibility(mi)",by="Severity")
+
+# The mean temperature is around 61F and the median is about 64F.
+# The minimum of -89F and other extreme values are likely errors or outliers,
+# so they should be handled during cleaning.
+
+# Boxplot of visibility by severity
+df_samples.boxplot(column="Visibility(mi)", by="Severity")
 plt.title("Visibility by the Severity")
 plt.suptitle("")
 plt.xlabel("Severity")
 plt.ylabel("Visibility")
 plt.show()
-# the severity the visibilty is around the 10 which show that the visibilty is not influncing the severity even though some times low visibilty can cause accidents but i think the report may have errors or the it is true
+
+# Visibility is centered around ~10 miles across severity levels.
+# This suggests visibility alone may not strongly differentiate severity,
+# or there may be reporting issues in the data.
+
+# Convert Start_Time to datetime and extract useful time features
 df["Start_Time"] = pd.to_datetime(df["Start_Time"], errors="coerce")
+
 df["Hours"] = df["Start_Time"].dt.hour
+
+# Accidents by hour of day
 counts = df["Hours"].value_counts().sort_index()
 counts.plot(kind="line")
 plt.title("Accidents by the Hour")
 plt.xlabel("Hour of the Day")
 plt.ylabel("Number of the Accidents")
 plt.show()
+
+# Accidents peak between about 5–7 AM and again in the evening.
+# This lines up with commute times when traffic volume is high.
+# Around 2 AM has the fewest accidents, likely due to low traffic.
+
+df["Month"] = df["Start_Time"].dt.month
+
+# Accidents by month
 month_counting = df["Month"].value_counts().sort_index()
+
 month_counting.plot(kind="line")
-plt.title("Accidents by the  Months")
+plt.title("Accidents by the Months")
 plt.xlabel("Months")
 plt.ylabel("Number of the Accidents")
 plt.show()
-#this plot is showing an important patten accidents are less in the mid months but increase in the end months of the year this many be due to the winter or holiadys or the more travel in foggy weather this also show that the seasons or patten of weather in a year influnce the accident number
+
+# Accidents are lower in the middle months and increase towards the end of the year.
+# This may relate to winter conditions, holidays, and increased travel in bad weather,
+# suggesting seasonality and weather patterns influence accident counts.
+
+# Top 10 states by accident count
 state_counts = df["State"].value_counts().head(10)
 state_counts.plot(kind="bar")
 plt.title("Top 10 States by the number of Accidents")
 plt.xlabel("State")
 plt.ylabel("Number of the Accidents")
 plt.show()
-# the CA have the highest number of the accidents compared to other states it may be due to the bigger size of the ca state or more vechiles. so size and number of vechiles influnce the accidents number
+
+# California has the highest number of accidents in this dataset.
+# This may reflect its larger population, more vehicles, and higher traffic volume.
+
 import seaborn as sns
+
+# Correlation among key continuous variables
 cols = [
     "Temperature(F)",
     "Humidity(%)",
@@ -77,9 +151,14 @@ cols = [
     "Precipitation(in)",
     "Distance(mi)"
 ]
+
 corr = df[cols].corr()
-plt.figure(figsize=(9,7))
+plt.figure(figsize=(9, 7))
 sns.heatmap(corr, annot=True)
 plt.title("Correlation Heatmap")
 plt.show()
-#the correlation heatmap shows that most have week lieanr relationship we can also see high negitive correlation between the Humidity and temperature this shows that when humidity increases the visibility decreases this reflect the real life scenario
+
+# The heatmap shows mostly weak linear relationships between these variables.
+# There is noticeable negative correlation between humidity and temperature,
+# which matches the idea that higher humidity often goes with lower temperature
+# and can reduce visibility in real-world conditions.
