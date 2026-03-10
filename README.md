@@ -88,4 +88,5 @@ Weather variables show mostly weak correlations.
 4. Run data cleaning with the correct path to the dataset:  
    `python data_cleaning.py  `
 
+link to the cleaned dataset https://buffalo.app.box.com/file/2159530636364
 
