@@ -3,11 +3,12 @@
 
 import os
 import pickle
+import argparse
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
@@ -18,9 +19,8 @@ from sklearn.metrics import (
 )
 from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
-import argparse
 
-np.random.seed(42)
+np.random.seed(14)
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 MODEL_DIR = os.path.join(BASE_DIR, "models")
@@ -86,7 +86,7 @@ def build_feature_matrix(df):
 
 
 def stratified_split(X, y, test_size=0.2):
-    return train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
+    return train_test_split(X, y, test_size=test_size, random_state=14, stratify=y)
 
 
 def save_fig(name):
@@ -143,7 +143,7 @@ def train(data_path):
             max_features="sqrt",
             class_weight="balanced",
             n_jobs=-1,
-            random_state=42,
+            random_state=14,
         )),
     ])
     print("fitting model...")
