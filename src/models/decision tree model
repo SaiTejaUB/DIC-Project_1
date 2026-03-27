@@ -58,3 +58,52 @@ x_train_sample,_,y_train_sample,_ = train_test_split(
 print(x_train_sample.shape)
 print(y_train_sample.shape)
 print(y_train_sample.value_counts().sort_index())
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+categorical = ['State','Weather_Condition','Sunrise_Sunset']
+numeric = [
+    'Distance(mi)','Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)','Hour','Month'
+]
+print(categorical)
+print(numeric)
+pre= ColumnTransformer(
+    transformers=[
+        ('cat',OneHotEncoder(handle_unknown='ignore'),categorical),
+        ('num','passthrough',numeric)
+    ]
+)
+from sklearn.pipeline import Pipeline
+from sklearn.tree import DecisionTreeClassifier
+pipe=Pipeline([
+    ('prep',pre),
+    ('model', DecisionTreeClassifier(random_state=43))
+])
+print(pipe)
+from sklearn.model_selection import GridSearchCV
+param_grid = {
+    'model__max_depth':[5,10,15,20],
+    'model__min_samples_split':[2,10,20],
+    'model__min_samples_leaf':[1,5,10]
+}
+grid=GridSearchCV(pipe,param_grid,cv=5,n_jobs=-1,scoring='f1_weighted')
+grid.fit(x_train_sample,y_train_sample)
+print("Parameters:",grid.best_params_)
+best = grid.best_params_
+final=Pipeline([
+    ('prep', pre),
+    ('model', DecisionTreeClassifier(
+        max_depth=best['model__max_depth'],
+        min_samples_split=best['model__min_samples_split'],
+        min_samples_leaf=best['model__min_samples_leaf'],
+        random_state=42
+    ))
+])
+final.fit(x_train, y_train)
+y_pred = final.predict(x_test)
+from sklearn.metrics import accuracy_score, f1_score, classification_report
+print("accuracy:",accuracy_score(y_test,y_pred))
+print("weighted F1:",f1_score(y_test,y_pred,average='weighted'))
+print("macroF1:",f1_score(y_test,y_pred,average='macro'))
+print("\nClassification Report:\n")
+print(classification_report(y_test,y_pred,zero_division=0))
