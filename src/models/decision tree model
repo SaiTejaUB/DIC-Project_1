@@ -36,3 +36,25 @@ print(df.isnull().sum())
 print(df[target].value_counts().sort_index())
 x=df[features]
 y=df[target]
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(
+    x,y,test_size=0.2,random_state=42,stratify=y
+)
+print(x_train.shape)
+print(x_test.shape)
+print(y_train.value_counts().sort_index())
+print(y_test.value_counts().sort_index())
+x_train,x_test,y_train,y_test = train_test_split(
+    x,y,test_size=0.2,random_state=42,stratify=y
+)
+print(x_train.shape)
+print(x_test.shape)
+print(y_train.value_counts().sort_index())
+print(y_test.value_counts().sort_index())
+sample_size=400000
+x_train_sample,_,y_train_sample,_ = train_test_split(
+    x_train,y_train,train_size=sample_size,random_state=42,stratify=y_train
+)
+print(x_train_sample.shape)
+print(y_train_sample.shape)
+print(y_train_sample.value_counts().sort_index())
