@@ -1,0 +1,7 @@
+import pandas as pd
+useful_columns = [
+    'Severity', 'Start_Time', 'Distance(mi)', 'State',
+    'Temperature(F)', 'Humidity(%)', 'Pressure(in)',
+    'Visibility(mi)', 'Wind_Speed(mph)', 'Precipitation(in)',
+    'Weather_Condition', 'Sunrise_Sunset'
+]
