@@ -25,3 +25,14 @@ print(df.head())
 df['Start_Time']=pd.to_datetime(df['Start_Time'],errors='coerce')
 print(df['Start_Time'].dtype)
 print(df['Start_Time'].isna().sum())
+features = [
+    'Distance(mi)','Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)',
+    'State','Weather_Condition','Sunrise_Sunset','Hour','Month'
+]
+target ='Severity'
+print(df.shape)
+print(df.isnull().sum())
+print(df[target].value_counts().sort_index())
+x=df[features]
+y=df[target]
