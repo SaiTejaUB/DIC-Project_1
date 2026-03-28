@@ -1,0 +1,91 @@
+import pandas as pd
+colums =[
+    'Severity','Start_Time','Distance(mi)','State',
+    'Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)',
+    'Weather_Condition','Sunrise_Sunset'
+]
+types={
+    'Severity':'int8',
+    'Distance(mi)':'float32',
+    'Temperature(F)':'float32',
+    'Humidity(%)':'float32',
+    'Pressure(in)':'float32',
+    'Visibility(mi)':'float32',
+    'Wind_Speed(mph)':'float32',
+    'Precipitation(in)':'float32',
+    'State':'category',
+    'Weather_Condition':'category',
+    'Sunrise_Sunset':'category'
+}
+df=pd.read_csv('/content/drive/MyDrive/us_accidents_cleaned_full.csv',usecols=colums,dtype=types)
+print("Dataset shape:",df.shape)
+print(df.columns)
+print(df.head())
+print(df['Severity'].value_counts().sort_index())
+df['Start_Time']= pd.to_datetime(df['Start_Time'],errors='coerce')
+df =df.dropna(subset=['Start_Time'])
+df['Hour'] =df['Start_Time'].dt.hour.astype('int8')
+df['Month'] =df['Start_Time'].dt.month.astype('int8')
+x_colums=[
+    'Distance(mi)','Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)',
+    'State','Weather_Condition','Sunrise_Sunset','Hour','Month'
+]
+y_colums='Severity'
+df=df[xcolums+ [ycolums]].dropna()
+print("After dropna:",df.shape)
+print(df.isnull().sum())
+print(df[ycolums].value_counts().sort_index())
+print(df.dtypes)
+x =df[xcolums]
+y =df[ycolums]
+print("x shape:",x.shape)
+print("y shape:",y.shape)
+from sklearn.model_selection import train_test_split
+x_train,x_test,y_train,y_test = train_test_split(
+    x,y,test_size=0.2,random_state=42,stratify=y
+)
+print("x_train shape:",x_train.shape)
+print("x_test shape:",x_test.shape)
+print("y_train counts:")
+print(y_train.value_counts().sort_index())
+print("y_test counts:")
+print(y_test.value_counts().sort_index())
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+numeric = [
+    'Distance(mi)','Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)',
+    'Hour','Month'
+]
+categorical = [
+    'State','Weather_Condition','Sunrise_Sunset'
+]
+print(numeric)
+print(categorical)
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num',StandardScaler(),numeric),
+        ('cat',OneHotEncoder(handle_unknown='ignore'),categorical)
+    ]
+)
+pipe = Pipeline([
+    ('prep',preprocessor),
+    ('model',LogisticRegression(
+        C=0.1,
+        solver='saga',
+        max_iter=150,
+        random_state=42
+    ))
+])
+pipe.fit(x_train,y_train)
+y_pred =pipe.predict(x_test)
+from sklearn.metrics import accuracy_score,f1_score,classification_report
+print("Accuracy:",accuracy_score(y_test,y_pred))
+print("Weighted F1:",f1_score(y_test,y_pred,average='weighted'))
+print("Macro F1:",f1_score(y_test,y_pred,average='macro'))
+print("\nClassification Report:\n")
+print(classification_report(y_test,y_pred,zero_division=0))
