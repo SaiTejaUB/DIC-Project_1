@@ -1,0 +1,20 @@
+import pandas as pd
+colums = [
+    'Severity','Start_Time','Distance(mi)','State',
+    'Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)',
+    'Weather_Condition','Sunrise_Sunset'
+]
+types = {
+    'Severity':'int8',
+    'Distance(mi)':'float32',
+    'Temperature(F)':'float32',
+    'Humidity(%)':'float32',
+    'Pressure(in)':'float32',
+    'Visibility(mi)':'float32',
+    'Wind_Speed(mph)':'float32',
+    'Precipitation(in)':'float32',
+    'State':'category',
+    'Weather_Condition':'category',
+    'Sunrise_Sunset':'category'
+}
