@@ -56,3 +56,36 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.linear_model import LogisticRegression
+numeric = [
+    'Distance(mi)','Temperature(F)','Humidity(%)','Pressure(in)',
+    'Visibility(mi)','Wind_Speed(mph)','Precipitation(in)',
+    'Hour','Month'
+]
+categorical = [
+    'State','Weather_Condition','Sunrise_Sunset'
+]
+print(numeric)
+print(categorical)
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num',StandardScaler(),numeric),
+        ('cat',OneHotEncoder(handle_unknown='ignore'),categorical)
+    ]
+)
+pipe = Pipeline([
+    ('prep',preprocessor),
+    ('model',LogisticRegression(
+        C=0.1,
+        solver='saga',
+        max_iter=150,
+        random_state=42
+    ))
+])
+pipe.fit(x_train,y_train)
+y_pred =pipe.predict(x_test)
+from sklearn.metrics import accuracy_score,f1_score,classification_report
+print("Accuracy:",accuracy_score(y_test,y_pred))
+print("Weighted F1:",f1_score(y_test,y_pred,average='weighted'))
+print("Macro F1:",f1_score(y_test,y_pred,average='macro'))
+print("\nClassification Report:\n")
+print(classification_report(y_test,y_pred,zero_division=0))
