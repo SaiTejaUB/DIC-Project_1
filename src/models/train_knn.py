@@ -1,145 +1,113 @@
-import argparse
-import time
-import warnings
-import random
-import pickle
-import os
-
-import numpy as np
 import pandas as pd
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
-import seaborn as sns
-
-from sklearn.model_selection import train_test_split, StratifiedKFold
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.utils import resample
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import (
-    classification_report, confusion_matrix,
-    accuracy_score, f1_score, precision_score, recall_score
-)
 
-warnings.filterwarnings("ignore")
-
-SEED = 42
-random.seed(SEED)
-np.random.seed(SEED)
-
-
-PALETTE = ["#264653", "#2a9d8f", "#e9c46a", "#f4a261", "#e76f51"]
-sns.set_theme(style="whitegrid", font_scale=1.05)
 
 
 
 def load_and_preprocess(path: str):
-    print(f"[k-NN] Loading data from {path} …")
+    print(f"[Preprocessing] Loading data from {path} …")
     df = pd.read_csv(path, low_memory=False)
-    print(f"[k-NN] Raw shape: {df.shape}")
+    print(f"[Preprocessing] Raw shape: {df.shape}")
 
-    X = df.drop(columns=['Severity', 'Unnamed: 0', 'Start_Time', 'End_Time'],errors='ignore')
-    y = df['Severity'].astype(int)
+    y_raw = df["Severity"].astype(int)
 
-    # Adjust Severity to be 0-indexed (0, 1, 2, 3 instead of 1, 2, 3, 4)
-    y = y - 1
+    # Create a binary target variable: 0 for minor (1, 2) and 1 for major (3, 4)
+    y = y_raw.apply(lambda x: 0 if x in [1, 2] else 1)
 
-    # Identify boolean columns and convert them to integers (0s and 1s)
-    boolean_cols = X.select_dtypes(include='bool').columns
-    for col in boolean_cols:
-        X[col] = X[col].astype(int)
+    df["Start_Time"] = pd.to_datetime(df["Start_Time"], errors="coerce")
+    df["End_Time"]= pd.to_datetime(df["End_Time"], errors="coerce")
+    df["Duration_min"] = (df["End_Time"] - df["Start_Time"]).dt.total_seconds() / 60
 
-    X['Sunrise_Sunset'] = X['Sunrise_Sunset'].map({'Night': 0, 'Day': 1})
+    df["Hour"] = df["Start_Time"].dt.hour
+    df["DayOfWeek"] = df["Start_Time"].dt.dayofweek
+    df["Month"] = df["Start_Time"].dt.month
+    df["IsWeekend"] = (df["DayOfWeek"] >= 5).astype(int)
+    df["IsPeakHour"] = df["Hour"].isin([7, 8, 9, 16, 17, 18]).astype(int)
 
-    other_object_cols = X.select_dtypes(include='object').columns
-    X = X.drop(columns=other_object_cols)
+    # Encode categoricals
+    cat_cols = ["Weather_Condition", "Sunrise_Sunset", "State"]
+    for col in cat_cols:
+        if col in df.columns:
+            le = LabelEncoder()
+            df[col] = le.fit_transform(df[col].astype(str))
 
-    # Fill any remaining NANs with column median
+    bool_cols = [
+        "Amenity", "Bump", "Crossing", "Give_Way", "Junction",
+        "No_Exit", "Railway", "Roundabout", "Station", "Stop",
+        "Traffic_Calming", "Traffic_Signal", "Turning_Loop"]
+    for col in bool_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(int)
+
+    feature_cols = [
+        "Start_Lat", "Start_Lng",
+        "Distance(mi)",
+        "Temperature(F)", "Visibility(mi)", "Wind_Speed(mph)",
+        "Weather_Condition", "Sunrise_Sunset", "State",
+        "Hour", "DayOfWeek", "Month", "IsWeekend", "IsPeakHour",
+        "Duration_min",
+    ] + bool_cols
+    feature_cols = [c for c in feature_cols if c in df.columns]
+
+    X = df[feature_cols].copy()
     X = X.fillna(X.median(numeric_only=True))
 
-    scaler  = StandardScaler()
-    X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    print(f"[Preprocessing] Features: {X.shape[1]}  |  Samples: {len(y)}")
+    print(f"[Preprocessing] Class distribution:\n{y_raw.value_counts().sort_index()}\n")
+    print(f"[Preprocessing] Binary target distribution:\n{y.value_counts().sort_index()}\n")
+    return X, y, feature_cols
 
-    feature_cols = list(X.columns)
-    print(f"[k-NN] Features used  : {feature_cols}")
-    print(f"[k-NN] Feature count  : {len(feature_cols)}")
-    print(f"[k-NN] Samples        : {len(y)}")
-    print(f"[k-NN] Class distribution (0-indexed):\n{y.value_counts().sort_index()}\n")
+X, y, feature_cols = load_and_preprocess(file_path)
 
-    return X_scaled, y, feature_cols, scaler
+# Combine X and y for consistent sampling
+data_combined = pd.concat([X, y.rename('target')], axis=1)
 
+#ONLY TAKING 500K ROWS DUE TO HIGH PREDICTION TIME FOR kNN
+if len(data_combined) > 500000:
+    sampled_data = resample(data_combined, n_samples=500000, random_state=42, stratify=data_combined['target'])
+else:
+    sampled_data = data_combined
 
+X_sampled = sampled_data.drop('target', axis=1)
+y_sampled = sampled_data['target']
 
-def tune_k(X_train, y_train, k_values=None):
-    print("[k-NN] best k value = 5.\n")
-    best_k = 5
-    k_scores = {5: 0.0}
-    return best_k, k_scores
-
-
-
-
-def train_model(X, y, best_k):
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=SEED, stratify=y
-    )
-    print(f"\n[k-NN] Training final model with k={best_k} …")
-    t0    = time.time()
-    model = KNeighborsClassifier(n_neighbors=best_k, weights="distance", n_jobs=-1)
-    model.fit(X_train, y_train)
-    print(f"[k-NN] Training complete in {time.time()-t0:.1f}s")
-    return model, X_train, X_test, y_train, y_test
+print(f"Original data shape: {X.shape}")
+print(f"Sampled data shape (X_sampled): {X_sampled.shape}")
+print(f"Sampled target shape (y_sampled): {y_sampled.shape}")
 
 
+# Split the sampled data into training and testing sets
+X_train_knn, X_test_knn, y_train_knn, y_test_knn = train_test_split(X_sampled, y_sampled, test_size=0.3, random_state=42, stratify=y_sampled)
+
+print(f"KNN X_train shape: {X_train_knn.shape}")
+print(f"KNN X_test shape: {X_test_knn.shape}")
+print(f"KNN y_train shape: {y_train_knn.shape}")
+print(f"KNN y_test shape: {y_test_knn.shape}")
 
 
-def evaluate(model, X_test, y_test):
-    y_pred = model.predict(X_test)
-    y_prob = model.predict_proba(X_test)
+# Using k=5
+knn_model = KNeighborsClassifier(n_neighbors=5)
 
-    acc  = accuracy_score(y_test, y_pred)
-    f1   = f1_score(y_test, y_pred, average="weighted", zero_division=0)
-    prec = precision_score(y_test, y_pred, average="weighted", zero_division=0)
-    rec  = recall_score(y_test, y_pred, average="weighted", zero_division=0)
+# Oversample minority class before fitting using SMOTE
+from imblearn.over_sampling import SMOTE
+sm = SMOTE(random_state=42)
+X_train_res, y_train_res = sm.fit_resample(X_train_knn, y_train_knn)
 
-    print("\n── k-NN Performance Metrics ────────────────────────────────")
-    print(f"  Accuracy          : {acc:.4f}")
-    print(f"  Weighted F1       : {f1:.4f}")
-    print(f"  Weighted Precision: {prec:.4f}")
-    print(f"  Weighted Recall   : {rec:.4f}")
+knn_model.fit(X_train_res, y_train_res)
+knn_model.fit(X_train_knn, y_train_knn)
 
-    present = sorted(y_test.unique())
-    labels  = [f"Sev {i+1}" for i in present]
-    print("\n  Per-Class Report:")
-    print(classification_report(y_test, y_pred,
-                                labels=present, target_names=labels, zero_division=0))
+# Make predictions on the test set, No training in KNN
+y_pred_knn = knn_model.predict(X_test_knn)
 
-    return dict(accuracy=acc, f1=f1, precision=prec, recall=rec,
-                y_pred=y_pred, y_prob=y_prob)
+# Evaluate the model
+accuracy_knn = accuracy_score(y_test_knn, y_pred_knn)
+report_knn = classification_report(y_test_knn, y_pred_knn)
 
+print(f"\nKNN Model Accuracy: {accuracy_knn:.4f}")
+print("\nKNN Classification Report:")
+print(report_knn)
 
-
-
-def main():
-    parser = argparse.ArgumentParser(description="k-NN Severity Classifier")
-    parser.add_argument("--data",     required=True, help="Path to processed CSV")
-    parser.add_argument("--out",      default="knn_results.png",
-                        help="Output figure filename")
-    parser.add_argument("--k-values", nargs="+", type=int,
-                        default=[3, 5, 7, 11, 15, 21],
-                        help="k values to search in CV")
-    args = parser.parse_args()
-
-    X, y, feature_cols, scaler = load_and_preprocess(args.data)
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=SEED, stratify=y
-    )
-    best_k, k_scores = tune_k(X_train, y_train, k_values=args.k_values)
-
-    model, X_train, X_test, y_train, y_test = train_model(X, y, best_k)
-    metrics = evaluate(model, X_test, y_test)
-
-
-if __name__ == "__main__":
-    main()
