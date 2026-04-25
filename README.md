@@ -169,3 +169,105 @@ See `requirements.txt`. Key packages:
 - xgboost — XGBoost model
 - mcp — MCP server
 - pandas, numpy, matplotlib, seaborn — data processing and visualization
+## Phase 3 – Databricks, Delta Lake & Spark MLlib
+
+### How to Run
+1. Upload the combined dataset to Databricks as a table:
+## Phase 3 – Databricks, Delta Lake & Spark MLlib
+
+### How to Run
+1. Upload the combined dataset to Databricks as a table
+2. Run the Databricks notebooks in this order
+3. Run the Spark MLlib logistic regression notebook on the combined dataset.
+4. The final saved Spark model was stored at:/Volumes/workspace/default/mama/models/logistic_regression_hpms_4class_500k
+
+### What Was Done
+
+**1. Databricks Setup**
+- Created Databricks notebooks for Phase 3
+- Loaded the project data into Databricks
+- Used Delta tables for Bronze, Silver, and Gold layers
+- Built the Spark MLlib workflow in Databricks
+
+**2. Bronze Layer**
+- Loaded the raw accident dataset into Databricks
+- Saved the raw dataset as a Delta table
+- No cleaning was done in this step
+
+**3. Silver Layer**
+- Read the data from the Bronze table
+- Applied cleaning and preprocessing
+- Fixed data types
+- Handled missing values
+- Removed duplicates
+- Standardized selected values
+
+**4. Gold Layer**
+- Created the final model-ready dataset
+- Included accident, weather, and time variables
+- Included roadway variables from the second dataset
+- Used this Gold table for Spark MLlib modeling
+
+**5. Additional Data Source**
+- Added **HPMS Spatial NHS Sections – 2024** as the second dataset
+- This dataset was useful because it adds road and traffic information that is not in the original US Accidents dataset
+- Important added features included:
+- `AADT`
+- `SPEED_LIMIT`
+- `THROUGH_LANES`
+- `ACCESS_CONTROL`
+- `FACILITY_TYPE`
+- `F_SYSTEM`
+- `URBAN_ID`
+- `hpms_distance_m`
+
+**6. Combining the Datasets**
+- Used a nearest-road spatial join
+- Each accident point was matched to the nearest HPMS road segment
+- Only matches within **100 meters** were kept
+- The HPMS road features were added to the accident record
+- This created the final combined dataset used for Phase 3 modeling
+
+**7. Spark MLlib Logistic Regression**
+- Re-implemented logistic regression in Databricks using Spark MLlib
+- Used a Spark pipeline with:
+- `VectorAssembler`
+- `StandardScaler`
+- `LogisticRegression`
+- `CrossValidator`
+- Kept the original **4 severity classes**
+- Used a **500,000-row subset** to keep the Spark run manageable
+- Final model results:
+- **Accuracy = 0.7413**
+- **F1 Score = 0.7032**
+- **Weighted Precision = 0.7044**
+- **Weighted Recall = 0.7413**
+
+**8. Comparison with Earlier Work**
+- Earlier Phase 2 baseline result:
+- **Accuracy = 0.8279**
+- **Weighted F1 = 0.7698**
+- **Macro F1 = 0.2701**
+- The Spark MLlib logistic regression did not improve the overall metrics
+- However, the earlier model was also affected by class imbalance and mainly performed better on the dominant class
+- The main Phase 3 contribution was:
+- scalable Databricks implementation
+- successful Spark MLlib pipeline
+- integration of the second dataset
+- multi-source severity prediction workflow
+
+**9. Insights from the Combined Data**
+- Severity depends not only on weather and time, but also on roadway context
+- Traffic volume, speed limit, and lane count added useful information
+- The severity target is still highly imbalanced, so rare classes are still difficult
+- HPMS strengthened the feature space even though it did not fully solve the minority-class prediction problem
+
+### Conclusion
+- Phase 3 moved the project into Databricks using Spark, Delta Lake, and Spark MLlib
+- The US Accidents dataset was combined with HPMS to create a stronger multi-source dataset
+- Logistic regression was successfully implemented in Spark MLlib on the combined dataset
+- The main result of Phase 3 was the scalable re-implementation of the workflow and the use of the second dataset in Databricks
+
+
+
+
