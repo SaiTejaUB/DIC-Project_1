@@ -46,7 +46,7 @@ def train(data_path):
     print("fitting model...")
     pipe.fit(X_train, y_train)
     print("done fitting")
-
+    save_model(pipe, "xgboost_pipeline.pkl")
 
 
     y_prob = pipe.predict_proba(X_test)[:, 1]
