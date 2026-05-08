@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-PATH = "DIC-Project_1\data\raw\US_Accidents_March23.csv"
+PATH = "data/raw/US_Accidents_March23.csv"
 
 # Preview a subset of the data to get a quick sense of structure and types
 df_preview = pd.read_csv(PATH, nrows=100000, low_memory=False)
