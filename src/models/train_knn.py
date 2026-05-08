@@ -5,6 +5,8 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils import resample
 from sklearn.neighbors import KNeighborsClassifier
 
+file_path = "../../data/processed/data_processed.csv"
+
 
 
 

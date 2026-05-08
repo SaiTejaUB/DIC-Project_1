@@ -346,7 +346,13 @@ Each script saves the trained model to models/ and figures to figures/.
 
 ### MCP Server
 
-The Random Forest model is deployed as an MCP server for Claude Desktop. See src/mcp/README.md for full setup instructions. Model pkl files are not included in the repo — run the training scripts first to generate them.
+The Random Forest model is deployed as an MCP server for Claude Desktop via `src/mcp/server.py`. It exposes three tools:
+
+- **`predict_severity`** — predicts Minor vs Severe for a single accident scenario given weather, location, time, and road feature inputs; returns prediction, probability, risk level (Low / Medium / High / Very High), and a plain-English summary
+- **`compare_scenarios`** — runs two scenarios side by side and returns which is higher risk and by how much
+- **`get_model_insights`** — returns top feature importances, known high-risk conditions, class distribution, and Phase 2 vs Phase 3 performance comparison
+
+See src/mcp/README.md for full setup instructions and demo prompts. Model pkl files are not included in the repo — run the training scripts first to generate them.
 
 ---
 
