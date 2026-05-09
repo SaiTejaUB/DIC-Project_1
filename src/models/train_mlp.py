@@ -27,7 +27,7 @@ FIG_DIR = os.path.join(BASE_DIR, "figures")
 os.makedirs(MODEL_DIR, exist_ok=True)
 os.makedirs(FIG_DIR, exist_ok=True)
 
-DATA_PATH = "../../data/processed/data_processed.csv"
+DATA_PATH = os.path.join(BASE_DIR, "data", "processed", "data_processed.csv")
 
 BOOLEAN_COLS = [
     "Amenity", "Bump", "Crossing", "Give_Way", "Junction", "No_Exit",

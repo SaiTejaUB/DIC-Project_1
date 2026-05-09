@@ -5,7 +5,9 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.utils import resample
 from sklearn.neighbors import KNeighborsClassifier
 
-file_path = "../../data/processed/data_processed.csv"
+import os
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+file_path = os.path.join(BASE_DIR, "data", "processed", "data_processed.csv")
 
 
 
